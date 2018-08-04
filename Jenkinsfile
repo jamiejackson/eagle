@@ -21,20 +21,38 @@ node {
     def image = "${awsIdentity().account}.dkr.ecr.${region}.amazonaws.com/${name}-${cluster}"
 
     stage('Preparation') {
+      dir(name) {
         git url: repo, branch: branch
+        // cleanup from prior runs
+        sh "ls -al"
+        sh "sudo rm -rf $WORKSPACE/analysis_results"
+        sh "mkdir $WORKSPACE/analysis_results"
+    	sh 'sudo docker stop analysis_results || true'
+      }
     }
 
     stage('Build Image') {
       dir(name) {
-		sh "sudo docker build -t ${name}:${env.BUILD_ID} -f ./container/Dockerfile ."
-		println "pull analysis reports from docker build stage image"
-		sh 'build_stage_image_id=`sudo docker images --filter "label=test=true" -q`'
-		sh 'sudo docker tag $build_stage_image_id analysis_reports'
-		sh 'sudo docker run --rm --name analysis_reports -d analysis_reports'
-		sh "sudo docker cp analysis_reports:/app/build/reports $WORKSPACE/analysis_reports"
-		sh "sudo docker stop analysis_reports"
-		sh "sudo docker rm analysis_reports"
+        sh 'set -x'
+	    sh "sudo docker build -t ${name}:${env.BUILD_ID} -f ./container/Dockerfile ."
+	    println "pull analysis results from docker build stage image"
+	    // find the intermediate build-stage image by its "test" label
+	    def build_stage_image_id = sh (script: 'sudo docker images --filter "label=test=true" -q', returnStdout: true).tokenize()[0]
+	    // tag that image so we can run it
+	    sh "sudo docker tag $build_stage_image_id analysis_results:latest"
+	    // run the image so we can get analysis results from it
+	    sh 'sudo docker run --rm --name analysis_results -d analysis_results:latest tail -f /dev/null'
+	    // copy the analysis results locally
+	    sh "sudo docker cp analysis_results:/app/build $WORKSPACE/analysis_results"
+	    // kill the container
+	    sh "sudo docker stop analysis_results &"
       }
+    }
+
+    stage ('Publish Test Results') {
+        dir ('analysis_results'){
+          jacoco()
+        }
     }
 
     stage('Push Image') {
