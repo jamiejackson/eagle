@@ -3,8 +3,8 @@ node {
     // ~~~ Build Configuration
 
     // Code repo
-    def repo = 'https://github.com/ICFI/eagle.git'
-    def branch = 'master'
+    def repo = 'https://github.com/jamiejackson/eagle.git'
+    def branch = 'build-in-docker'
 
     // Container
     def name = 'eagle'
@@ -23,15 +23,14 @@ node {
     stage('Preparation') {
         git url: repo, branch: branch
     }
-    stage('Build App') {
-        sh "./gradlew npmInstall build -Dorg.gradle.daemon=false"
+    stage('Build Image') {
+      dir(name) {
+          sh "sudo docker build -t ${name}:${env.BUILD_ID} -f ./container/Dockerfile  ."
+      }
     }
-    stage('Build Container') {
+    stage('Push Image') {
         sh "aws configure set default.region ${region}"
         sh "sudo \$(aws ecr get-login --no-include-email)"
-        sh "sudo docker build -t ${name}:${env.BUILD_ID} --build-arg JAR_FILE=./build/libs/${name}.jar -f ./container/Dockerfile  ."
-    }
-    stage('Push Container') {
         sh "sudo docker tag ${name}:${env.BUILD_ID} ${image}:${env.BUILD_ID}"
         sh "sudo docker tag ${name}:${env.BUILD_ID} ${image}:latest"
         sh "sudo docker push ${image}:${env.BUILD_ID}"

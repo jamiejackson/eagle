@@ -1,0 +1,10 @@
+build
+bin
+node_modules
+src/main/resources/public/
+package-lock.json
+.project
+.settings
+.gradle
+.git
+.classpath
