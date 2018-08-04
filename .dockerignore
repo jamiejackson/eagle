@@ -1,5 +1,6 @@
 build
 bin
+docker-compose.yml
 node_modules
 src/main/resources/public/
 package-lock.json

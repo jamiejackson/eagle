@@ -14,8 +14,9 @@ COPY ./ /app/
 
 WORKDIR /app
 
-RUN ./gradlew npmInstall -Dorg.gradle.daemon=false
-RUN ./gradlew build -Dorg.gradle.daemon=false
+RUN ./gradlew clean build -Dorg.gradle.daemon=false
+
+RUN find / -name 'bundle.js'
 
 FROM openjdk:8-jdk-alpine
 
