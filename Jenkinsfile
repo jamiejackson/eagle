@@ -23,11 +23,20 @@ node {
     stage('Preparation') {
         git url: repo, branch: branch
     }
+
     stage('Build Image') {
       dir(name) {
-          sh "sudo docker build -t ${name}:${env.BUILD_ID} -f ./container/Dockerfile  ."
+		sh "sudo docker build -t ${name}:${env.BUILD_ID} -f ./container/Dockerfile ."
+		println "pull analysis reports from docker build stage image"
+		sh 'build_stage_image_id=`sudo docker images --filter "label=test=true" -q`'
+		sh 'sudo docker tag $build_stage_image_id analysis_reports'
+		sh 'sudo docker run --rm --name analysis_reports -d analysis_reports'
+		sh "sudo docker cp analysis_reports:/app/build/reports $WORKSPACE/analysis_reports"
+		sh "sudo docker stop analysis_reports"
+		sh "sudo docker rm analysis_reports"
       }
     }
+
     stage('Push Image') {
         sh "aws configure set default.region ${region}"
         sh "sudo \$(aws ecr get-login --no-include-email)"
@@ -36,6 +45,7 @@ node {
         sh "sudo docker push ${image}:${env.BUILD_ID}"
         sh "sudo docker push ${image}:latest"
     }
+
     stage('Deploy Container') {
         sh "aws ecs update-service --cluster ${cluster} --service ${name} --force-new-deployment"
     }

@@ -1,6 +1,5 @@
 FROM openjdk:8-jdk as build_stage
 
-
 RUN apt-get update
 RUN apt-get install -y nodejs
 RUN apt-get install -y --no-install-recommends gcc make libpng-dev
@@ -17,6 +16,8 @@ WORKDIR /app
 RUN ./gradlew clean build -Dorg.gradle.daemon=false
 
 RUN find / -name 'bundle.js'
+
+LABEL test=true
 
 FROM openjdk:8-jdk-alpine
 
