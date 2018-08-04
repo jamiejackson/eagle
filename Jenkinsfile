@@ -53,6 +53,10 @@ node {
         dir ('analysis_results'){
           jacoco()
         }
+        // junit plugin wants "fresh" test results (a build with no changes
+        //   will have test results with older dates).
+        sh 'sudo touch analysis_results/build/test-results/test/*.xml'
+        junit 'analysis_results/build/test-results/test/*.xml'
     }
 
     stage('Push Image') {
