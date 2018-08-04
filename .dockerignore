@@ -1,6 +1,7 @@
 build
 bin
 docker-compose.yml
+Jenkinsfile
 node_modules
 src/main/resources/public/
 package-lock.json
