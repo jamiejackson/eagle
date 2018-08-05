@@ -2,6 +2,8 @@ node {
 
     // ~~~ Build Configuration
 
+    sh "printenv"
+
     // Code repo
     def repo = 'https://github.com/jamiejackson/eagle.git'
     def branch = 'build-in-docker'
@@ -68,7 +70,7 @@ node {
         sh "sudo docker push ${image}:latest"
     }
 
-    stage('Deploy Container') {
+    stage('Deploy Service') {
         sh "aws ecs update-service --cluster ${cluster} --service ${name} --force-new-deployment"
     }
 }
